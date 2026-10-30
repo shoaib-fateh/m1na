@@ -31,13 +31,18 @@ def test_completed_message_holds_for_configured_duration():
     window.config = {"popup": {"hold_ms": 8000}}
     window.root = FakeRoot()
     window._sound_playing = False
+    window._dismiss_timer_job = None
+    window._dismiss_timer_started_at = None
+    window._dismiss_timer_remaining_ms = 0
+    window._dismiss_callback = None
+    window._popup_hovered = False
 
     window._type_next()
 
     assert window._typed == 1
     assert window.root.scheduled[0][0] == 8000
-    assert window.root.scheduled[0][1].__self__ is window
-    assert window.root.scheduled[0][1].__name__ == "_dismiss_dialogue"
+    assert window._dismiss_callback.__name__ == "_dismiss_dialogue"
+    assert window._dismiss_timer_job == "after-id"
 
 
 def test_minimize_slides_popup_away_without_exiting_companion():
@@ -90,6 +95,11 @@ def test_cancel_popup_notifies_when_popup_disappears():
     window._frame_job = None
     window._animation_job = None
     window._type_job = None
+    window._hover_check_job = None
+    window._dismiss_timer_job = None
+    window._dismiss_timer_started_at = None
+    window._dismiss_timer_remaining_ms = 0
+    window._dismiss_callback = None
     window._sound_playing = False
     window._popup_static_photos = []
     window.on_popup_dismissed = lambda: calls.append("dismissed")
@@ -99,3 +109,47 @@ def test_cancel_popup_notifies_when_popup_disappears():
     window._cancel_popup()
 
     assert calls == ["destroy", "dismissed"]
+
+
+def test_hover_pauses_dismiss_timer_and_resumes_remaining_time(monkeypatch):
+    import mina.popup as popup_module
+
+    clock = [10.0]
+    monkeypatch.setattr(popup_module.time, "monotonic", lambda: clock[0])
+
+    class Root:
+        def __init__(self):
+            self.scheduled = []
+            self.cancelled = []
+
+        def after(self, delay, callback):
+            job = f"job-{len(self.scheduled) + 1}"
+            self.scheduled.append((job, delay, callback))
+            return job
+
+        def after_cancel(self, job):
+            self.cancelled.append(job)
+
+    window = object.__new__(MinaWindows)
+    window.root = Root()
+    window._popup = object()
+    window._popup_hovered = False
+    window._dismiss_timer_job = None
+    window._dismiss_timer_started_at = None
+    window._dismiss_timer_remaining_ms = 0
+    window._dismiss_callback = None
+
+    window._start_dismiss_timer(8000, lambda: None)
+    first_job = window._dismiss_timer_job
+    clock[0] = 13.0
+    window._on_popup_enter(None)
+
+    assert first_job in window.root.cancelled
+    assert window._dismiss_timer_remaining_ms == 5000
+    assert window._dismiss_timer_job is None
+
+    window._popup_hovered = False
+    window._resume_dismiss_timer()
+
+    assert window.root.scheduled[-1][1] == 5000
+    assert window._dismiss_timer_job == window.root.scheduled[-1][0]

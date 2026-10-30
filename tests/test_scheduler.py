@@ -73,6 +73,7 @@ def test_none_daily_limit_is_unlimited():
     scheduler, _ = make_scheduler(clock, lambda _limit: True, limit=None)
     clock.now = 10
     assert scheduler.poll()
+    scheduler.finish_interruption()
     clock.now = 20
     assert scheduler.poll()
 
@@ -93,6 +94,7 @@ def test_daily_limit_resets_on_local_date_change():
     scheduler.today = lambda: current_day[0]
     clock.now = 10
     assert scheduler.poll()
+    scheduler.finish_interruption()
     current_day[0] += timedelta(days=1)
     clock.now = 20
     assert scheduler.poll()

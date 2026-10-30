@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 import tkinter as tk
 from collections.abc import Callable
 from pathlib import Path
@@ -44,6 +45,12 @@ class MinaWindows:
         self._frame_job: str | None = None
         self._animation_job: str | None = None
         self._type_job: str | None = None
+        self._dismiss_timer_job: str | None = None
+        self._hover_check_job: str | None = None
+        self._dismiss_timer_remaining_ms = 0
+        self._dismiss_timer_started_at: float | None = None
+        self._dismiss_callback: Callable[[], None] | None = None
+        self._popup_hovered = False
         self._sound_playing = False
         self._status_clear_job: str | None = None
         self._frames = []
@@ -284,6 +291,7 @@ class MinaWindows:
     ) -> None:
         self._cancel_popup()
         self._popup_kind = "peek" if peek else "dialogue"
+        self._popup_hovered = False
         self._popup_static_photos.clear()
         self._message = message
         self._typed = 0
@@ -321,6 +329,10 @@ class MinaWindows:
         )
         self._canvas.pack()
         self._draw_popup(width, height, peek)
+        popup.bind("<Enter>", self._on_popup_enter)
+        popup.bind("<Leave>", self._on_popup_leave)
+        self._canvas.bind("<Enter>", self._on_popup_enter)
+        self._canvas.bind("<Leave>", self._on_popup_leave)
 
         work_left, work_top, work_right, work_bottom = self._get_work_area()
         if corner.endswith("left"):
@@ -339,7 +351,9 @@ class MinaWindows:
         self._slide(target_x, start_y, target_y, slide_ms, "in")
         self._animate_emoji()
         if peek:
-            self.root.after(int(animation.get("peek_duration_ms", 1500)), self._dismiss_peek)
+            self._start_dismiss_timer(
+                int(animation.get("peek_duration_ms", 1500)), self._dismiss_peek
+            )
         else:
             self._type_next()
 
@@ -414,7 +428,86 @@ class MinaWindows:
         else:
             self._stop_sound()
             hold = int(self.config["popup"].get("hold_ms", 3000))
-            self.root.after(hold, self._dismiss_dialogue)
+            self._start_dismiss_timer(hold, self._dismiss_dialogue)
+
+    def _start_dismiss_timer(
+        self, delay_ms: int, callback: Callable[[], None]
+    ) -> None:
+        self._cancel_dismiss_timer()
+        self._dismiss_timer_remaining_ms = max(0, delay_ms)
+        self._dismiss_callback = callback
+        self._resume_dismiss_timer()
+
+    def _resume_dismiss_timer(self) -> None:
+        if (
+            self._popup is None
+            or self._popup_hovered
+            or self._dismiss_callback is None
+            or self._dismiss_timer_job is not None
+        ):
+            return
+        self._dismiss_timer_started_at = time.monotonic()
+        self._dismiss_timer_job = self.root.after(
+            self._dismiss_timer_remaining_ms, self._run_dismiss_timer
+        )
+
+    def _pause_dismiss_timer(self) -> None:
+        if self._dismiss_timer_job is None:
+            return
+        started_at = self._dismiss_timer_started_at
+        elapsed_ms = int(
+            (time.monotonic() - started_at) * 1000
+        ) if started_at is not None else 0
+        self._dismiss_timer_remaining_ms = max(
+            0, self._dismiss_timer_remaining_ms - elapsed_ms
+        )
+        self.root.after_cancel(self._dismiss_timer_job)
+        self._dismiss_timer_job = None
+        self._dismiss_timer_started_at = None
+
+    def _cancel_dismiss_timer(self) -> None:
+        if self._dismiss_timer_job is not None:
+            try:
+                self.root.after_cancel(self._dismiss_timer_job)
+            except tk.TclError:
+                pass
+        self._dismiss_timer_job = None
+        self._dismiss_timer_started_at = None
+        self._dismiss_timer_remaining_ms = 0
+        self._dismiss_callback = None
+
+    def _run_dismiss_timer(self) -> None:
+        self._dismiss_timer_job = None
+        self._dismiss_timer_started_at = None
+        self._dismiss_timer_remaining_ms = 0
+        callback = self._dismiss_callback
+        self._dismiss_callback = None
+        if callback is not None:
+            callback()
+
+    def _on_popup_enter(self, _event: tk.Event) -> None:
+        self._popup_hovered = True
+        self._pause_dismiss_timer()
+
+    def _on_popup_leave(self, _event: tk.Event) -> None:
+        if self._hover_check_job is None:
+            self._hover_check_job = self.root.after_idle(
+                self._resume_dismiss_timer_if_pointer_left
+            )
+
+    def _resume_dismiss_timer_if_pointer_left(self) -> None:
+        self._hover_check_job = None
+        popup = self._popup
+        if popup is None:
+            return
+        pointer_x, pointer_y = popup.winfo_pointerxy()
+        inside = (
+            popup.winfo_rootx() <= pointer_x < popup.winfo_rootx() + popup.winfo_width()
+            and popup.winfo_rooty() <= pointer_y < popup.winfo_rooty() + popup.winfo_height()
+        )
+        if not inside:
+            self._popup_hovered = False
+            self._resume_dismiss_timer()
 
     def _animate_emoji(self) -> None:
         if not self._frames or self._canvas is None or self._popup is None:
@@ -493,13 +586,20 @@ class MinaWindows:
 
     def _cancel_popup(self) -> None:
         self._stop_sound()
-        for job in (self._frame_job, self._animation_job, self._type_job):
+        for job in (
+            self._frame_job,
+            self._animation_job,
+            self._type_job,
+            self._hover_check_job,
+        ):
             if job:
                 try:
                     self.root.after_cancel(job)
                 except tk.TclError:
                     pass
         self._frame_job = self._animation_job = self._type_job = None
+        self._hover_check_job = None
+        self._cancel_dismiss_timer()
         if self._popup is not None:
             try:
                 self._popup.destroy()
