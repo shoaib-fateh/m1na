@@ -1,0 +1,1173 @@
+{
+  "pack": "Tiny RPG - Emoji Pack I",
+  "source_archive": "emojiPackI.zip",
+  "frame_order": "row-major, left-to-right then top-to-bottom, using occupied cells only",
+  "source_grid": {
+    "columns": 5,
+    "rows": 4,
+    "cell_width": 32,
+    "cell_height": 32
+  },
+  "default_frame_duration_ms": 80,
+  "animations": [
+    {
+      "name": "Angry",
+      "source_file": "20250405emoticons-SheetAngry.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/angry.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Cant",
+      "source_file": "20250405emoticons-SheetCant.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/cant.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Come",
+      "source_file": "20250405emoticons-SheetCome.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/come.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Crying",
+      "source_file": "20250405emoticons-SheetCrying.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/crying.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Cute",
+      "source_file": "20250405emoticons-SheetCute.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/cute.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Dizzy",
+      "source_file": "20250405emoticons-SheetDizzy.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/dizzy.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Down",
+      "source_file": "20250405emoticons-SheetDown.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/down.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Drooling",
+      "source_file": "20250405emoticons-SheetDrooling.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/drooling.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Eager",
+      "source_file": "20250405emoticons-SheetEager.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/eager.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Exclamation",
+      "source_file": "20250405emoticons-SheetExclamation.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/exclamation.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Frustrated",
+      "source_file": "20250405emoticons-SheetFrustrated.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/frustrated.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Headblown",
+      "source_file": "20250405emoticons-SheetHeadblown.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/headblown.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Idea",
+      "source_file": "20250405emoticons-SheetIdea.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/idea.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Kissing",
+      "source_file": "20250405emoticons-SheetKissing.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/kissing.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Laughing",
+      "source_file": "20250405emoticons-SheetLaughing.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/laughing.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Left",
+      "source_file": "20250405emoticons-SheetLeft.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/left.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Lit",
+      "source_file": "20250405emoticons-SheetLit.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/lit.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Love",
+      "source_file": "20250405emoticons-SheetLove.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/love.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Neutral",
+      "source_file": "20250405emoticons-SheetNeutral.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/neutral.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "No",
+      "source_file": "20250405emoticons-SheetNo.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/no.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "OMG",
+      "source_file": "20250405emoticons-SheetOMG.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/omg.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Ok",
+      "source_file": "20250405emoticons-SheetOk.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/ok.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Question",
+      "source_file": "20250405emoticons-SheetQuestion.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/question.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Right",
+      "source_file": "20250405emoticons-SheetRight.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/right.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Silence",
+      "source_file": "20250405emoticons-SheetSilence.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/silence.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Sleepy",
+      "source_file": "20250405emoticons-SheetSleepy.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/sleepy.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Speechless",
+      "source_file": "20250405emoticons-SheetSpeechless.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/speechless.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Sweat",
+      "source_file": "20250405emoticons-SheetSweat.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/sweat.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Thinking",
+      "source_file": "20250405emoticons-SheetThinking.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/thinking.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Tongue",
+      "source_file": "20250405emoticons-SheetTongue.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/tongue.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Yes",
+      "source_file": "20250405emoticons-SheetYes.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/yes.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Up",
+      "source_file": "20250405emoticons-Sheetup.png",
+      "frame_count": 16,
+      "frame_duration_ms": 80,
+      "dimensions": {
+        "width": 32,
+        "height": 32
+      },
+      "output_filename": "animations/up.gif",
+      "loop": "infinite",
+      "source_grid_cells_used": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "empty_cells_excluded": [
+        16,
+        17,
+        18,
+        19
+      ]
+    }
+  ],
+  "summary": {
+    "sprite_sheets_found": 32,
+    "animations_created": 32,
+    "dimensions": "32x32",
+    "frame_duration_ms": 80,
+    "total_animation_frames": 512
+  }
+}

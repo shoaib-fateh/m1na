@@ -1,0 +1,17 @@
+{
+  "archive": "emojiPackI.zip",
+  "expected_sprite_sheets": 32,
+  "found_sprite_sheets": 32,
+  "processed_sprite_sheets": 32,
+  "animations_created": 32,
+  "damaged_assets": [],
+  "empty_assets": [],
+  "ambiguous_assets": [],
+  "notes": [
+    "All source PNGs were read without modification; original archive is not altered.",
+    "All sheets use 160x128 RGBA and a 5x4 grid of 32x32 cells.",
+    "Each sheet has occupied cells 0-15 and empty cells 16-19.",
+    "All source alpha values are binary (0 or 255), so GIF transparency can be preserved without alpha flattening.",
+    "Frame order is row-major across the 16 occupied cells. This produces the visible scale/pulse progression in the sheets."
+  ]
+}

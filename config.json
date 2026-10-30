@@ -1,0 +1,66 @@
+{
+  "profile": "development",
+  "model": {
+    "path": "D:\\DAVYAN\\models\\Qwen2.5-0.5B-Instruct",
+    "max_new_tokens": 48,
+    "cpu_threads": 4
+  },
+  "activity": {
+    "active_within_seconds": 300,
+    "poll_interval_ms": 1000
+  },
+  "profiles": {
+    "development": {
+      "interval_seconds": [20, 60],
+      "cooldown_seconds": [10, 30],
+      "daily_limit": null
+    },
+    "normal": {
+      "interval_seconds": [1800, 3600],
+      "cooldown_seconds": [1800, 2700],
+      "daily_limit": 8
+    }
+  },
+  "emoji_peek": {
+    "chance": 0.2,
+    "corner": "bottom_right"
+  },
+  "emoji": {
+    "directory": "assets/emojis/animations",
+    "mapping": "assets/emojis/moods.json",
+    "scale": 2,
+    "keywords": {
+      "potato": "Cute",
+      "gravity": "Dizzy",
+      "why": "Question",
+      "oops": "Sweat",
+      "moon": "Sleepy",
+      "tiny": "Cute",
+      "idea": "Idea",
+      "ha": "Laughing"
+    }
+  },
+  "ui": {
+    "font": "Mojangles",
+    "font_path": "assets/fonts/mojangles.otf",
+    "register_font": true,
+    "persian_fallback": "Segoe UI",
+    "persian_fallback_path": "%WINDIR%\\Fonts\\segoeui.ttf",
+    "emoji_scale": 1,
+    "companion_size": [280, 84]
+  },
+  "popup": {
+    "size": [420, 142],
+    "message_font_size": 16,
+    "typewriter_ms": 35,
+    "hold_ms": 8000,
+    "mute_header_right_padding": 16,
+    "animation": {
+      "slide_ms": 200,
+      "peek_duration_ms": 60000
+    }
+  },
+  "sound": {
+    "typing_wav": "assets/sounds/typing.wav"
+  }
+}

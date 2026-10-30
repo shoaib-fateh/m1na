@@ -1,0 +1,98 @@
+﻿{
+    "Angry":  [
+                  "angry.gif"
+              ],
+    "Cant":  [
+                 "cant.gif"
+             ],
+    "Come":  [
+                 "come.gif"
+             ],
+    "Crying":  [
+                   "crying.gif"
+               ],
+    "Cute":  [
+                 "cute.gif"
+             ],
+    "Dizzy":  [
+                  "dizzy.gif"
+              ],
+    "Down":  [
+                 "down.gif"
+             ],
+    "Drooling":  [
+                     "drooling.gif"
+                 ],
+    "Eager":  [
+                  "eager.gif"
+              ],
+    "Exclamation":  [
+                        "exclamation.gif"
+                    ],
+    "Frustrated":  [
+                       "frustrated.gif"
+                   ],
+    "Headblown":  [
+                      "headblown.gif"
+                  ],
+    "Idea":  [
+                 "idea.gif"
+             ],
+    "Kissing":  [
+                    "kissing.gif"
+                ],
+    "Laughing":  [
+                     "laughing.gif"
+                 ],
+    "Left":  [
+                 "left.gif"
+             ],
+    "Lit":  [
+                "lit.gif"
+            ],
+    "Love":  [
+                 "love.gif"
+             ],
+    "Neutral":  [
+                    "neutral.gif"
+                ],
+    "No":  [
+               "no.gif"
+           ],
+    "OMG":  [
+                "omg.gif"
+            ],
+    "Ok":  [
+               "ok.gif"
+           ],
+    "Question":  [
+                     "question.gif"
+                 ],
+    "Right":  [
+                  "right.gif"
+              ],
+    "Silence":  [
+                    "silence.gif"
+                ],
+    "Sleepy":  [
+                   "sleepy.gif"
+               ],
+    "Speechless":  [
+                       "speechless.gif"
+                   ],
+    "Sweat":  [
+                  "sweat.gif"
+              ],
+    "Thinking":  [
+                     "thinking.gif"
+                 ],
+    "Tongue":  [
+                   "tongue.gif"
+               ],
+    "Yes":  [
+                "yes.gif"
+            ],
+    "Up":  [
+               "up.gif"
+           ]
+}
