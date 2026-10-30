@@ -72,7 +72,7 @@ class LocalQwen:
                 )
                 inputs = tokenizer(prompt, return_tensors="pt")
             else:
-                prompt = f"System: {PERSONALITY}\nUser: Say one new short absurd thought.\nMina:"
+                prompt = f"System: {PERSONALITY}\nUser: What is on your mind right now? \nMina:"
                 inputs = tokenizer(prompt, return_tensors="pt")
 
             outputs = model.generate(

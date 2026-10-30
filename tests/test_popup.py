@@ -82,6 +82,48 @@ def test_emoji_peek_draws_only_the_gif_without_dialogue_decoration():
     assert canvas.rectangles == []
 
 
+def test_emoji_peek_is_horizontally_centered():
+    window = object.__new__(MinaWindows)
+
+    x = window._popup_target_x(72, 0, 1920, "bottom_right", peek=True)
+
+    assert x == 924
+
+
+def test_emoji_animation_repeats_frames_until_popup_is_dismissed():
+    class Canvas:
+        def __init__(self):
+            self.images = []
+
+        def itemconfigure(self, _item, image):
+            self.images.append(image)
+
+    class Root:
+        def __init__(self):
+            self.callbacks = []
+
+        def after(self, delay, callback):
+            self.callbacks.append((delay, callback))
+            return len(self.callbacks)
+
+    first, second = object(), object()
+    window = object.__new__(MinaWindows)
+    window._frames = [first, second]
+    window._frame_durations = [80, 80]
+    window._frame_index = 0
+    window._canvas = Canvas()
+    window._popup = object()
+    window._emoji_item = 1
+    window.root = Root()
+
+    window._animate_emoji()
+    window.root.callbacks[0][1]()
+    window.root.callbacks[1][1]()
+
+    assert window._canvas.images == [first, second, first]
+    assert [delay for delay, _callback in window.root.callbacks] == [80, 80, 80]
+
+
 def test_cancel_popup_notifies_when_popup_disappears():
     calls = []
 

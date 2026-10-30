@@ -335,10 +335,9 @@ class MinaWindows:
         self._canvas.bind("<Leave>", self._on_popup_leave)
 
         work_left, work_top, work_right, work_bottom = self._get_work_area()
-        if corner.endswith("left"):
-            target_x = work_left + 12
-        else:
-            target_x = work_right - width - 12
+        target_x = self._popup_target_x(
+            width, work_left, work_right, corner, peek
+        )
         target_y = work_bottom - height - 4
         start_y = work_bottom + 2
         popup.geometry(f"+{target_x}+{start_y}")
@@ -352,10 +351,24 @@ class MinaWindows:
         self._animate_emoji()
         if peek:
             self._start_dismiss_timer(
-                int(animation.get("peek_duration_ms", 1500)), self._dismiss_peek
+                int(animation.get("peek_duration_ms", 60000)), self._dismiss_peek
             )
         else:
             self._type_next()
+
+    @staticmethod
+    def _popup_target_x(
+        width: int,
+        work_left: int,
+        work_right: int,
+        corner: str,
+        peek: bool,
+    ) -> int:
+        if peek:
+            return work_left + (work_right - work_left - width) // 2
+        if corner.endswith("left"):
+            return work_left + 12
+        return work_right - width - 12
 
     def _draw_popup(self, width: int, height: int, peek: bool) -> None:
         canvas = self._canvas
