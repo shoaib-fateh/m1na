@@ -106,6 +106,39 @@ class LocalQwen:
         )
         return self._generate(chat_messages, max_characters=400)
 
+    def generate_behavior(self, event: dict[str, object]) -> str | None:
+        if not self.loaded:
+            raise RuntimeError("The local Mina model has not finished loading.")
+        name = str(event.get("name", "something changed"))
+        context = event.get("context", {})
+        if not isinstance(context, dict):
+            raise ValueError("Behavior event context must be an object.")
+        system_prompt = (
+            PERSONALITY
+            + " You may occasionally react to a local time or routine event. "
+            "Decide for yourself whether it is worth interrupting the user. "
+            "If not, reply with exactly [SILENT]. Otherwise say one short, natural "
+            "Mina-like line; do not narrate the event data or sound like a notification."
+        )
+        response = self._generate(
+            [
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Local behavior event: {name}. "
+                        f"Signals: {context!r}. "
+                        "Decide whether to say a brief line or remain silent."
+                    ),
+                },
+            ],
+            max_characters=220,
+        )
+        silence_token = response.strip().strip("[] .!?").casefold()
+        if silence_token == "silent":
+            return None
+        return response
+
     def _generate(self, messages: list[dict[str, str]], max_characters: int) -> str:
         import torch
 

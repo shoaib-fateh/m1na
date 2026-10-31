@@ -25,6 +25,15 @@ def get_idle_seconds() -> float:
     return idle_seconds_from_ticks(int(get_tick_count()), int(info.dwTime))
 
 
+def get_system_uptime_seconds() -> float:
+    """Return elapsed Windows boot time, including time spent suspended."""
+    if sys.platform != "win32":
+        raise OSError("Mina's uptime detector is available only on Windows.")
+    get_tick_count = ctypes.windll.kernel32.GetTickCount64
+    get_tick_count.restype = ctypes.c_ulonglong
+    return int(get_tick_count()) / 1000.0
+
+
 def idle_seconds_from_ticks(current_tick: int, last_input_tick: int) -> float:
     elapsed_ms = (current_tick - last_input_tick) & 0xFFFFFFFF
     return elapsed_ms / 1000.0

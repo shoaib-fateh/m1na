@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -123,6 +124,75 @@ def load_config(path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
     dataset_path = config.get("dataset", {}).get("path", "data/mina.sqlite3")
     if not isinstance(dataset_path, str) or not dataset_path.strip():
         raise ValueError("dataset.path must be a non-empty local path.")
+
+    time_behavior = config.get("time_behavior", {})
+    if not isinstance(time_behavior, dict):
+        raise ValueError("time_behavior must be an object.")
+    if not isinstance(time_behavior.get("enabled", True), bool):
+        raise ValueError("time_behavior.enabled must be a boolean.")
+    poll_interval = time_behavior.get("poll_interval_ms", 30_000)
+    if (
+        not isinstance(poll_interval, int)
+        or isinstance(poll_interval, bool)
+        or poll_interval < 1_000
+    ):
+        raise ValueError("time_behavior.poll_interval_ms must be at least 1000.")
+    behavior_path = time_behavior.get("path", "data/mina_behavior.sqlite3")
+    if not isinstance(behavior_path, str) or not behavior_path.strip():
+        raise ValueError("time_behavior.path must be a non-empty local path.")
+    _validate_range(
+        {"cooldown_seconds": time_behavior.get("cooldown_seconds", [1800, 3600])},
+        "cooldown_seconds",
+    )
+    _validate_range(
+        {"delay_seconds": time_behavior.get("delay_seconds", [15, 90])},
+        "delay_seconds",
+    )
+    rules = time_behavior.get("rules", [])
+    if not isinstance(rules, list):
+        raise ValueError("time_behavior.rules must be a list.")
+    rule_ids: set[str] = set()
+    rule_types = {
+        "startup",
+        "uptime",
+        "time_range",
+        "idle",
+        "no_interaction",
+        "new_day",
+        "time_period",
+        "since_spoke",
+    }
+    for rule in rules:
+        if not isinstance(rule, dict):
+            raise ValueError("Each time_behavior rule must be an object.")
+        rule_id = rule.get("id")
+        if not isinstance(rule_id, str) or not rule_id.strip() or rule_id in rule_ids:
+            raise ValueError("time_behavior rule IDs must be unique non-empty strings.")
+        rule_ids.add(rule_id)
+        if rule.get("type") not in rule_types:
+            raise ValueError(f"Unknown time_behavior rule type: {rule.get('type')!r}.")
+        if not isinstance(rule.get("enabled", True), bool):
+            raise ValueError(f"time_behavior rule {rule_id!r}.enabled must be a boolean.")
+        priority = rule.get("priority", 0)
+        if not isinstance(priority, (int, float)) or isinstance(priority, bool):
+            raise ValueError(f"time_behavior rule {rule_id!r}.priority must be numeric.")
+        if rule["type"] == "uptime":
+            _validate_positive_number(rule, "hours", rule_id)
+        if rule["type"] in {"idle", "no_interaction", "since_spoke"}:
+            _validate_positive_number(rule, "seconds", rule_id)
+        if rule["type"] == "time_range":
+            for key in ("start", "end"):
+                value = rule.get(key)
+                try:
+                    parsed = datetime.strptime(value, "%H:%M")
+                except (TypeError, ValueError):
+                    raise ValueError(
+                        f"time_behavior rule {rule_id!r}.{key} must use HH:MM."
+                    ) from None
+                if parsed.strftime("%H:%M") != value:
+                    raise ValueError(
+                        f"time_behavior rule {rule_id!r}.{key} must use HH:MM."
+                    )
     return config
 
 
@@ -136,3 +206,17 @@ def _validate_range(profile: dict[str, Any], key: str) -> None:
         or value[0] > value[1]
     ):
         raise ValueError(f"{key} must be a two-number [minimum, maximum] range.")
+
+
+def _validate_positive_number(
+    rule: dict[str, Any], key: str, rule_id: str
+) -> None:
+    value = rule.get(key)
+    if (
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or value <= 0
+    ):
+        raise ValueError(
+            f"time_behavior rule {rule_id!r}.{key} must be a positive number."
+        )

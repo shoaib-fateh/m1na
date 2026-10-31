@@ -20,8 +20,42 @@ def test_loads_default_project_configuration():
     assert (PROJECT_ROOT / config["sound"]["animalese"]["files"][0]).is_file()
     assert config["sound"]["animalese"]["playback_speed"] == 1.0
     assert config["gaming_mode"]["enabled"]
+    assert config["time_behavior"]["enabled"]
+    assert config["time_behavior"]["poll_interval_ms"] == 30_000
 
 
+def test_time_behavior_can_be_omitted_from_older_config(tmp_path):
+    from mina.config import DEFAULT_CONFIG_PATH
+
+    config = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+    config.pop("time_behavior")
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+
+    assert load_config(path)["profile"] == config["profile"]
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda section: section.update(poll_interval_ms=500), "poll_interval_ms"),
+        (lambda section: section.update(delay_seconds=[30, 10]), "delay_seconds"),
+        (
+            lambda section: section["rules"][0].update(type="unknown"),
+            "rule type",
+        ),
+    ],
+)
+def test_rejects_invalid_time_behavior_settings(tmp_path, mutation, message):
+    from mina.config import DEFAULT_CONFIG_PATH
+
+    config = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+    mutation(config["time_behavior"])
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        load_config(path)
 
 
 @pytest.mark.parametrize("value", [0, -1, True, 1.5])

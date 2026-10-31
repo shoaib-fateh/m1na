@@ -7,15 +7,23 @@ import sqlite3
 import sys
 import threading
 import tkinter as tk
+from datetime import datetime
 from pathlib import Path
 
-from mina.activity import get_fullscreen_game, get_visible_applications, is_user_active
+from mina.activity import (
+    get_fullscreen_game,
+    get_idle_seconds,
+    get_system_uptime_seconds,
+    get_visible_applications,
+    is_user_active,
+)
 from mina.config import PROJECT_ROOT, load_config
 from mina.dataset import PersonalDataset
 from mina.emoji_assets import EmojiLibrary, load_mapping
 from mina.generator import LocalQwen
 from mina.popup import MinaWindows
 from mina.scheduler import InterruptionScheduler, ScheduleSettings
+from mina.time_behavior import TimeBehaviorMonitor
 from mina.tray import MinaTrayIcon
 
 
@@ -33,6 +41,8 @@ class MinaApp:
         self._model_ready = False
         self._generation_active = False
         self._chat_generation_active = False
+        self._behavior_generation_active = False
+        self._behavior_event_id: int | None = None
         self._manual_chat_active = False
         self._thought_generation_id = 0
         self._gaming_mode = False
@@ -66,6 +76,25 @@ class MinaApp:
         except (OSError, sqlite3.Error) as error:
             self.dataset = None
             self.windows.set_status(f"Local dataset unavailable: {error}", error=True)
+        behavior_config = self.config.get("time_behavior", {})
+        self.time_behavior: TimeBehaviorMonitor | None = None
+        if behavior_config.get("enabled", True):
+            behavior_path = Path(
+                behavior_config.get("path", "data/mina_behavior.sqlite3")
+            )
+            if not behavior_path.is_absolute():
+                behavior_path = PROJECT_ROOT / behavior_path
+            try:
+                self.time_behavior = TimeBehaviorMonitor(
+                    behavior_path,
+                    behavior_config.get("rules", []),
+                    tuple(behavior_config.get("cooldown_seconds", [1800, 3600])),
+                    tuple(behavior_config.get("delay_seconds", [15, 90])),
+                )
+            except (OSError, sqlite3.Error, ValueError) as error:
+                self.windows.set_status(
+                    f"Time behavior monitoring unavailable: {error}", error=True
+                )
         self.scheduler: InterruptionScheduler | None = None
         self._tray_icon: MinaTrayIcon | None = None
         self._start_tray_icon()
@@ -73,6 +102,8 @@ class MinaApp:
         self.root.protocol("WM_DELETE_WINDOW", self.close)
         self.root.after(100, self._drain_events)
         self.root.after(500, self._poll_activity)
+        if self.time_behavior is not None:
+            self.root.after(1000, self._poll_time_behavior)
 
     def _register_private_font(self) -> None:
         font_path = PROJECT_ROOT / self.config["ui"].get("font_path", "")
@@ -267,6 +298,7 @@ class MinaApp:
                     except (OSError, sqlite3.Error, ValueError) as error:
                         errors.append(f"Could not save Mina's reply locally: {error}")
                 self.windows.show_dialogue(message, self._mood_for_message(message))
+                self._mark_spoken()
                 if application_error:
                     errors.append(f"Application detection failed: {application_error}")
                 if errors:
@@ -275,34 +307,149 @@ class MinaApp:
                 self._chat_generation_active = False
                 self.windows.set_status(f"Chat failed: {payload}", error=True)
                 self.windows.show_chat()
+            elif event == "behavior_reply":
+                event_id, message = payload
+                self._behavior_generation_active = False
+                self._behavior_event_id = None
+                self._acknowledge_behavior_event(int(event_id))
+                if (
+                    message
+                    and not self._closing
+                    and not self.windows.muted
+                    and not self._gaming_mode
+                    and not self._manual_chat_active
+                    and not self._chat_generation_active
+                    and not getattr(self.windows, "popup_active", False)
+                ):
+                    cleaned = str(message).strip()
+                    if cleaned:
+                        if self.dataset is not None:
+                            try:
+                                self.dataset.add_message(
+                                    "thought", "assistant", cleaned, []
+                                )
+                            except (OSError, sqlite3.Error, ValueError) as error:
+                                self.windows.set_status(
+                                    f"Could not save Mina's thought locally: {error}",
+                                    error=True,
+                                )
+                        self.windows.set_status("Mina has a thought!")
+                        self.windows.show_dialogue(
+                            cleaned, self._mood_for_message(cleaned)
+                        )
+                        self._mark_spoken()
+            elif event == "behavior_error":
+                event_id, error_text = payload
+                self._behavior_generation_active = False
+                self._behavior_event_id = None
+                self._acknowledge_behavior_event(int(event_id))
+                self.windows.set_status(
+                    f"Time behavior response failed: {error_text}", error=True
+                )
             elif event == "status":
                 text, is_error = payload
                 self.windows.set_status(str(text), error=bool(is_error))
         self.root.after(100, self._drain_events)
 
-    def _show_generated_message(self, message: str) -> None:
+    def _show_generated_message(self, message: str) -> bool:
         if self.windows.muted or self._closing:
             self._finish_interruption()
-            return
+            return False
         try:
             if not is_user_active(float(self.config["activity"]["active_within_seconds"])):
                 self.windows.set_status("Mina waited; you wandered off.")
                 self._finish_interruption()
-                return
+                return False
         except OSError as error:
             self.windows.set_status(f"Activity check failed: {error}", error=True)
             if self.scheduler:
                 self.scheduler.stop()
-            return
+            return False
 
         cleaned = message.strip()
         if not cleaned:
             self.windows.set_status("Mina's thought was mysteriously empty.", error=True)
             self._finish_interruption()
-            return
+            return False
         self.windows.set_status("Mina has a thought!")
         mood = self._mood_for_message(cleaned)
         self.windows.show_dialogue(cleaned, mood)
+        self._mark_spoken()
+        return True
+
+    def _mark_spoken(self) -> None:
+        if self.time_behavior is None:
+            return
+        try:
+            self.time_behavior.mark_spoken()
+        except (OSError, sqlite3.Error, ValueError) as error:
+            self.windows.set_status(
+                f"Could not save Mina's speaking time: {error}", error=True
+            )
+
+    def _acknowledge_behavior_event(self, event_id: int) -> None:
+        if self.time_behavior is None:
+            return
+        try:
+            self.time_behavior.acknowledge(event_id)
+        except (OSError, sqlite3.Error, ValueError) as error:
+            self.windows.set_status(
+                f"Could not clear time behavior event: {error}", error=True
+            )
+
+    def _poll_time_behavior(self) -> None:
+        if self._closing or self.time_behavior is None:
+            return
+        settings = self.config.get("time_behavior", {})
+        try:
+            event = self.time_behavior.poll(
+                datetime.now().astimezone(),
+                get_system_uptime_seconds(),
+                get_idle_seconds(),
+            )
+            if event is not None and not self._behavior_generation_active:
+                if self._gaming_mode or self.windows.muted:
+                    self._acknowledge_behavior_event(int(event["id"]))
+                elif (
+                    self._model_ready
+                    and not self._generation_active
+                    and not self._chat_generation_active
+                    and not self._manual_chat_active
+                    and not getattr(self.windows, "popup_active", False)
+                ):
+                    self._start_behavior_generation(event)
+        except (OSError, sqlite3.Error, ValueError) as error:
+            self.windows.set_status(
+                f"Time behavior monitoring failed: {error}", error=True
+            )
+        self.root.after(
+            int(settings.get("poll_interval_ms", 30_000)),
+            self._poll_time_behavior,
+        )
+
+    def _start_behavior_generation(self, event: dict[str, object]) -> None:
+        event_id = int(event["id"])
+        self._behavior_generation_active = True
+        self._behavior_event_id = event_id
+        self.windows.set_status("Mina noticed a little time thing…")
+
+        def behavior_worker() -> None:
+            try:
+                message = self.generator.generate_behavior(event)
+                self._events.put(("behavior_reply", (event_id, message)))
+            except Exception as error:
+                self._events.put(
+                    (
+                        "behavior_error",
+                        (event_id, f"{type(error).__name__}: {error}"),
+                    )
+                )
+
+        threading.Thread(
+            target=behavior_worker,
+            name="Mina-time-behavior",
+            daemon=True,
+        ).start()
 
     def _get_applications(self) -> tuple[list[str], str | None]:
         settings = self.config.get("application_awareness", {})

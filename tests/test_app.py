@@ -160,3 +160,85 @@ def test_thought_generated_before_game_mode_is_discarded():
 
     assert not app.windows.shown
     assert len(app.root.scheduled) == 1
+
+
+def test_time_behavior_monitor_runs_before_model_is_ready(monkeypatch):
+    class Monitor:
+        def __init__(self):
+            self.polled = []
+
+        def poll(self, now, uptime_seconds, idle_seconds):
+            self.polled.append((now, uptime_seconds, idle_seconds))
+            return None
+
+    app = object.__new__(MinaApp)
+    app._closing = False
+    app._behavior_generation_active = False
+    app._model_ready = False
+    app._generation_active = False
+    app._chat_generation_active = False
+    app._manual_chat_active = False
+    app._gaming_mode = False
+    app.time_behavior = Monitor()
+    app.config = {"time_behavior": {"poll_interval_ms": 5000}}
+    app.root = FakeRoot()
+    app.windows = FakeWindows()
+
+    monkeypatch.setattr("mina.app.get_system_uptime_seconds", lambda: 7200)
+    monkeypatch.setattr("mina.app.get_idle_seconds", lambda: 30)
+
+    app._poll_time_behavior()
+
+    assert len(app.time_behavior.polled) == 1
+    assert app.time_behavior.polled[0][1:] == (7200, 30)
+    assert app.root.scheduled[-1][0] == 5000
+
+
+def test_behavior_reply_can_be_silent_or_shown_and_acknowledged():
+    class Monitor:
+        def __init__(self):
+            self.acknowledged = []
+            self.spoken = 0
+
+        def acknowledge(self, event_id):
+            self.acknowledged.append(event_id)
+
+        def mark_spoken(self):
+            self.spoken += 1
+
+    class Windows(FakeWindows):
+        def __init__(self):
+            super().__init__()
+            self.muted = False
+            self.dialogues = []
+
+        def show_dialogue(self, message, mood):
+            self.dialogues.append((message, mood))
+
+    app = object.__new__(MinaApp)
+    app._closing = False
+    app._gaming_mode = False
+    app._manual_chat_active = False
+    app._chat_generation_active = False
+    app._behavior_generation_active = True
+    app._behavior_event_id = 7
+    app._events = queue.Queue()
+    app._events.put(("behavior_reply", (7, "A little clock frog!")))
+    app.root = FakeRoot()
+    app.windows = Windows()
+    app.time_behavior = Monitor()
+    app.dataset = None
+    app._mood_for_message = lambda _message: "Cute"
+    app._drain_events()
+
+    assert app.windows.dialogues == [("A little clock frog!", "Cute")]
+    assert app.time_behavior.acknowledged == [7]
+    assert app.time_behavior.spoken == 1
+
+    app._behavior_generation_active = True
+    app._behavior_event_id = 8
+    app._events.put(("behavior_reply", (8, None)))
+    app._drain_events()
+
+    assert app.windows.dialogues == [("A little clock frog!", "Cute")]
+    assert app.time_behavior.acknowledged == [7, 8]

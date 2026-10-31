@@ -121,6 +121,10 @@ class MinaWindows:
         self.root.after(500, self._position_companion)
         self.root.bind("<Configure>", self._on_root_configure)
 
+    @property
+    def popup_active(self) -> bool:
+        return self._popup is not None
+
     def _create_pixel_text(
         self,
         canvas: tk.Canvas,

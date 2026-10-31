@@ -33,6 +33,85 @@
   "chat": {
     "memory_messages": 10
   },
+  "time_behavior": {
+    "enabled": true,
+    "poll_interval_ms": 30000,
+    "path": "data/mina_behavior.sqlite3",
+    "cooldown_seconds": [1800, 3600],
+    "delay_seconds": [15, 90],
+    "rules": [
+      {
+        "id": "system_startup",
+        "name": "the computer has started up",
+        "type": "startup",
+        "priority": 100
+      },
+      {
+        "id": "uptime_12_hours",
+        "name": "the computer has been on for 12 hours",
+        "type": "uptime",
+        "hours": 12,
+        "priority": 90
+      },
+      {
+        "id": "uptime_6_hours",
+        "name": "the computer has been on for 6 hours",
+        "type": "uptime",
+        "hours": 6,
+        "priority": 80
+      },
+      {
+        "id": "uptime_2_hours",
+        "name": "the computer has been on for 2 hours",
+        "type": "uptime",
+        "hours": 2,
+        "priority": 70
+      },
+      {
+        "id": "late_night",
+        "name": "it is late at night",
+        "type": "time_range",
+        "start": "00:00",
+        "end": "05:00",
+        "priority": 60
+      },
+      {
+        "id": "no_interaction_30_minutes",
+        "name": "there has been no user interaction for 30 minutes",
+        "type": "no_interaction",
+        "seconds": 1800,
+        "exclusive_group": "inactivity",
+        "priority": 50
+      },
+      {
+        "id": "idle_20_minutes",
+        "name": "Windows has been idle for 20 minutes",
+        "type": "idle",
+        "seconds": 1200,
+        "exclusive_group": "inactivity",
+        "priority": 40
+      },
+      {
+        "id": "time_period_change",
+        "name": "the time of day has changed",
+        "type": "time_period",
+        "priority": 30
+      },
+      {
+        "id": "new_day",
+        "name": "a new day has begun",
+        "type": "new_day",
+        "priority": 20
+      },
+      {
+        "id": "long_silence",
+        "name": "Mina has not spoken in four hours",
+        "type": "since_spoke",
+        "seconds": 14400,
+        "priority": 10
+      }
+    ]
+  },
   "dataset": {
     "path": "data/mina.sqlite3"
   },

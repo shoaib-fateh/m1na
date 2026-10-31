@@ -48,3 +48,40 @@ def test_chat_prompt_preserves_mina_personality_and_context():
         "user",
     ]
     assert captured["max_characters"] == 400
+
+
+def test_behavior_prompt_lets_mina_choose_silence():
+    generator = LocalQwen("unused")
+    generator._tokenizer = object()
+    generator._model = object()
+    captured = {}
+
+    def generate(messages, max_characters):
+        captured["messages"] = messages
+        captured["max_characters"] = max_characters
+        return "[SILENT]."
+
+    generator._generate = generate
+    result = generator.generate_behavior(
+        {
+            "name": "the computer has been on for 2 hours",
+            "context": {"uptime_hours": 2.1, "time_period": "afternoon"},
+        }
+    )
+
+    assert result is None
+    assert "not a generic assistant" in captured["messages"][0]["content"]
+    assert "[SILENT]" in captured["messages"][0]["content"]
+    assert "uptime_hours" in captured["messages"][1]["content"]
+    assert captured["max_characters"] == 220
+
+
+def test_behavior_prompt_returns_mina_personality_message():
+    generator = LocalQwen("unused")
+    generator._tokenizer = object()
+    generator._model = object()
+    generator._generate = lambda *_args, **_kwargs: "My clock grew a tiny hat."
+
+    assert generator.generate_behavior({"name": "late night"}) == (
+        "My clock grew a tiny hat."
+    )
