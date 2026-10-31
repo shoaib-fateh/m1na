@@ -45,6 +45,55 @@ def test_model_ready_does_not_show_persistent_companion_panel():
     assert not app.root.deiconified
 
 
+def test_create_scheduler_uses_production_profile_and_persistent_state(
+    monkeypatch, tmp_path
+):
+    class Scheduler:
+        def __init__(self, *, settings, is_active, on_interrupt, clock):
+            self.settings = settings
+            self.is_active = is_active
+            self.on_interrupt = on_interrupt
+            self.clock = clock
+            self.started = False
+
+        def start(self):
+            self.started = True
+
+    monkeypatch.setattr("mina.app.InterruptionScheduler", Scheduler)
+    app = object.__new__(MinaApp)
+    app.config = {
+        "profile": "normal",
+        "profiles": {
+            "normal": {
+                "interval_seconds": [1800, 3600],
+                "cooldown_seconds": [1800, 2700],
+                "daily_limit": 8,
+            }
+        },
+        "scheduler": {
+            "enabled": True,
+            "state_path": str(tmp_path / "scheduler.sqlite3"),
+        },
+        "activity": {
+            "active_within_seconds": 300,
+            "poll_interval_ms": 1000,
+        },
+    }
+    app.windows = FakeWindows()
+    app.windows.muted = False
+    app._gaming_mode = False
+    app._manual_chat_active = False
+    app._begin_interruption = lambda: None
+
+    app._create_scheduler()
+
+    assert app.scheduler.settings.interval_seconds == (1800, 3600)
+    assert app.scheduler.settings.daily_limit == 8
+    assert app.scheduler.settings.state_path == tmp_path / "scheduler.sqlite3"
+    assert app.scheduler.is_active is not None
+    assert app.scheduler.started
+
+
 def test_gaming_mode_pauses_scheduler_and_resumes_with_fresh_schedule():
     class Scheduler:
         def __init__(self):

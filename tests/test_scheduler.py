@@ -118,3 +118,40 @@ def test_cancel_interruption_releases_slot_without_counting_a_missed_message():
     clock.now = 20
     assert scheduler.poll()
     assert fired == [10, 20]
+
+
+def test_schedule_and_daily_limit_survive_restart(tmp_path):
+    state_path = tmp_path / "scheduler.sqlite3"
+    clock = Clock()
+    today = [date(2026, 10, 30)]
+    settings = ScheduleSettings((10, 10), (5, 5), 1, 300, 1000, state_path)
+    first = InterruptionScheduler(
+        settings,
+        lambda _limit: True,
+        lambda: None,
+        clock=clock,
+        today=lambda: today[0],
+    )
+    first.start()
+    clock.now = 10
+    assert first.poll()
+    first.finish_interruption()
+    first.stop()
+    assert first.daily_count == 1
+
+    restarted = InterruptionScheduler(
+        settings,
+        lambda _limit: True,
+        lambda: None,
+        clock=clock,
+        today=lambda: today[0],
+    )
+    assert restarted.daily_count == 1
+    restarted.start()
+    assert restarted.next_due == 20
+    assert restarted.cooldown_until == 15
+    clock.now = 20
+    assert not restarted.poll()
+
+    today[0] += timedelta(days=1)
+    assert restarted.daily_count == 0

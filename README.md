@@ -24,14 +24,24 @@ python mina.py
 
 If a compatible CPU build of PyTorch is already installed, skip the first `pip install` command. After dependencies are installed, Mina immediately loads the configured local model on CPU in a background thread. Tkinter remains responsive while it loads and generates; errors appear in the status text.
 
+For everyday use, install Mina as a per-user Windows logon task from PowerShell:
+
+```powershell
+.\install_mina_task.ps1
+```
+
+The task starts Mina in the logged-in desktop session (required for Tkinter and the notification-area icon), uses the project virtual environment when present, ignores overlapping task launches, and retries a crashed process. It does not run elevated or as a Windows service. Remove it with `.\uninstall_mina_task.ps1`. The launcher also prevents a second Mina process if the app is started manually while the task is already running.
+If Mina fails before its status panel can initialize, the launcher records the traceback in `data/mina.log` (rotated at 1 MB, retaining three backups).
+
 ## Configuration
 
 Edit `config.json`:
 
 - `model.path`: local model directory; default is the existing Qwen model.
-- `profile`: `development` or `normal`.
-- `profiles.development`: random 20–60 second intervals and 10–30 second cooldowns after each popup disappears, no daily cap.
+- `profile`: the production `normal` schedule.
 - `profiles.normal`: random 30–60 minute intervals and 30–45 minute cooldowns after each popup disappears, capped at 8/day.
+- `scheduler.enabled`: enable or disable spontaneous interruption scheduling.
+- `scheduler.state_path`: local SQLite file used to preserve the next due time, cooldown, and daily count across Mina restarts. An overdue interruption is rescheduled instead of being replayed immediately after restart.
 - `activity.active_within_seconds`: recent-input window. Mina checks only Windows' last-input timestamp and never reads or stores keys or typed text.
 - `time_behavior.enabled`: enable or disable the independent local time-based trigger monitor.
 - `time_behavior.poll_interval_ms`: interval for checking wall-clock time, Windows uptime, and idle duration (30 seconds by default).
@@ -61,6 +71,8 @@ The supplied emoji pack is CC0 1.0. Mojangles is provided for local personal use
 - Mina is designed to run on Windows. Activity detection uses `GetLastInputInfo` through `ctypes`.
 - `pystray` provides Mina's persistent Windows notification-area icon and manual chat/exit menu.
 - Model loading and generation use worker threads; Tkinter animations use scheduled callbacks.
+- The Windows logon task launches only in the interactive user session; its restart policy handles process crashes. A per-session mutex prevents duplicate Mina windows and model loads.
+- Spontaneous interruption scheduling remains in Mina's Tk event loop, checks activity on its configured timer, and stores its daily limit/cooldown/next due state locally in SQLite. This is separate from the independent time-behavior trigger database.
 - Time-based trigger evaluation is lightweight and runs independently of model loading; only due event generation uses a worker thread. Windows uptime comes from `GetTickCount64`, while persisted trigger delays and cooldowns use local wall-clock timestamps.
 - Sound playback is asynchronous. Sound volume and playback speed are prepared locally from uncompressed PCM WAV data in the background; adjusted temporary files are removed when Mina exits. At most one sound mode is active at a time.
 - If an emoji sheet or configured sound file is unavailable, Mina displays an explicit status error.

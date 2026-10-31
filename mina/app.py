@@ -6,6 +6,7 @@ import random
 import sqlite3
 import sys
 import threading
+import time
 import tkinter as tk
 from datetime import datetime
 from pathlib import Path
@@ -139,24 +140,55 @@ class MinaApp:
         threading.Thread(target=load_worker, name="Mina-model-loader", daemon=True).start()
 
     def _create_scheduler(self) -> None:
-        profile = self.config["profiles"][self.config.get("profile", "development")]
-        self.scheduler = InterruptionScheduler(
-            settings=ScheduleSettings(
-                interval_seconds=tuple(profile["interval_seconds"]),
-                cooldown_seconds=tuple(profile["cooldown_seconds"]),
-                daily_limit=profile.get("daily_limit"),
-                active_idle_limit_seconds=float(self.config["activity"]["active_within_seconds"]),
-                poll_interval_ms=int(self.config["activity"]["poll_interval_ms"]),
-            ),
-            is_active=is_user_active,
-            on_interrupt=self._begin_interruption,
+        scheduler_config = self.config.get("scheduler", {})
+        if not scheduler_config.get("enabled", True):
+            return
+        profile = self.config["profiles"][self.config.get("profile", "normal")]
+        state_path = Path(
+            scheduler_config.get("state_path", "data/mina_scheduler.sqlite3")
         )
+        if not state_path.is_absolute():
+            state_path = PROJECT_ROOT / state_path
+        try:
+            self.scheduler = InterruptionScheduler(
+                settings=ScheduleSettings(
+                    interval_seconds=tuple(profile["interval_seconds"]),
+                    cooldown_seconds=tuple(profile["cooldown_seconds"]),
+                    daily_limit=profile.get("daily_limit"),
+                    active_idle_limit_seconds=float(
+                        self.config["activity"]["active_within_seconds"]
+                    ),
+                    poll_interval_ms=int(self.config["activity"]["poll_interval_ms"]),
+                    state_path=state_path,
+                ),
+                is_active=is_user_active,
+                on_interrupt=self._begin_interruption,
+                clock=time.time,
+            )
+        except (OSError, sqlite3.Error, ValueError) as error:
+            self.scheduler = None
+            self.windows.set_status(
+                f"Interruption scheduler unavailable: {error}", error=True
+            )
+            return
         if (
             not self.windows.muted
             and not self._gaming_mode
             and not self._manual_chat_active
         ):
-            self.scheduler.start()
+            self._scheduler_action("start")
+
+    def _scheduler_action(self, action: str) -> object | None:
+        if self.scheduler is None:
+            return None
+        try:
+            return getattr(self.scheduler, action)()
+        except (OSError, sqlite3.Error, ValueError) as error:
+            self.scheduler = None
+            self.windows.set_status(
+                f"Interruption scheduler {action} failed: {error}", error=True
+            )
+            return None
 
     def _start_tray_icon(self) -> None:
         try:
@@ -363,7 +395,7 @@ class MinaApp:
         except OSError as error:
             self.windows.set_status(f"Activity check failed: {error}", error=True)
             if self.scheduler:
-                self.scheduler.stop()
+                self._scheduler_action("stop")
             return False
 
         cleaned = message.strip()
@@ -469,8 +501,8 @@ class MinaApp:
             return
         self._manual_chat_active = True
         if self.scheduler:
-            self.scheduler.stop()
-            self.scheduler.cancel_interruption()
+            self._scheduler_action("stop")
+            self._scheduler_action("cancel_interruption")
         if self._generation_active:
             self._thought_generation_id += 1
             self._generation_active = False
@@ -511,7 +543,7 @@ class MinaApp:
 
     def _finish_interruption(self) -> None:
         if self.scheduler:
-            self.scheduler.finish_interruption()
+            self._scheduler_action("finish_interruption")
         if self._manual_chat_active and not self._chat_generation_active:
             self._manual_chat_active = False
             if (
@@ -520,7 +552,7 @@ class MinaApp:
                 and not self._gaming_mode
                 and self._model_ready
             ):
-                self.scheduler.start()
+                self._scheduler_action("start")
 
     def _poll_activity(self) -> None:
         if self._closing:
@@ -546,12 +578,8 @@ class MinaApp:
             if self._gaming_mode or self._manual_chat_active:
                 self.root.after(interval, self._poll_activity)
                 return
-            try:
-                if self.scheduler.poll():
-                    self.windows.set_status("Mina has appeared!")
-            except OSError as error:
-                self.scheduler.stop()
-                self.windows.set_status(f"Activity check failed: {error}", error=True)
+            if self._scheduler_action("poll"):
+                self.windows.set_status("Mina has appeared!")
         self.root.after(interval, self._poll_activity)
 
     def _set_gaming_mode(self, active: bool, process_name: str | None = None) -> None:
@@ -562,7 +590,7 @@ class MinaApp:
             self._thought_generation_id += 1
             self._generation_active = False
             if self.scheduler:
-                self.scheduler.stop()
+                self._scheduler_action("stop")
             self.windows.set_gaming_mode(True)
             self.windows.set_status(
                 f"Gaming Mode: {process_name or 'fullscreen app'}"
@@ -577,7 +605,7 @@ class MinaApp:
             and self._model_ready
         ):
             self.scheduler.cooldown_until = 0.0
-            self.scheduler.start()
+            self._scheduler_action("start")
         self.windows.set_status("Gaming Mode off", transient_ms=3000)
 
     def toggle_mute(self) -> None:
@@ -587,21 +615,21 @@ class MinaApp:
         self.windows.set_muted(muted)
         if self.scheduler:
             if muted:
-                self.scheduler.stop()
+                self._scheduler_action("stop")
                 self.windows.set_status("Mina is quietly napping.")
             elif (
                 self._model_ready
                 and not self._gaming_mode
                 and not self._manual_chat_active
             ):
-                self.scheduler.start()
+                self._scheduler_action("start")
 
     def close(self) -> None:
         if self._closing:
             return
         self._closing = True
         if self.scheduler:
-            self.scheduler.stop()
+            self._scheduler_action("stop")
         if self._tray_icon is not None:
             try:
                 self._tray_icon.stop()

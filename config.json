@@ -1,5 +1,5 @@
 {
-  "profile": "development",
+  "profile": "normal",
   "model": {
     "path": "D:\\DAVYAN\\models\\Qwen2.5-0.5B-Instruct",
     "max_new_tokens": 48,
@@ -112,15 +112,14 @@
       }
     ]
   },
+  "scheduler": {
+    "enabled": true,
+    "state_path": "data/mina_scheduler.sqlite3"
+  },
   "dataset": {
     "path": "data/mina.sqlite3"
   },
   "profiles": {
-    "development": {
-      "interval_seconds": [20, 60],
-      "cooldown_seconds": [10, 30],
-      "daily_limit": null
-    },
     "normal": {
       "interval_seconds": [1800, 3600],
       "cooldown_seconds": [1800, 2700],

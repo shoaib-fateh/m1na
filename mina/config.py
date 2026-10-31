@@ -16,7 +16,7 @@ def load_config(path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
     if not isinstance(config, dict):
         raise ValueError("The configuration file must contain a JSON object.")
 
-    profile_name = config.get("profile", "development")
+    profile_name = config.get("profile", "normal")
     profiles = config.get("profiles")
     if not isinstance(profiles, dict) or profile_name not in profiles:
         raise ValueError(f"Unknown timing profile: {profile_name!r}")
@@ -29,6 +29,15 @@ def load_config(path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
         not isinstance(daily_limit, int) or isinstance(daily_limit, bool) or daily_limit < 1
     ):
         raise ValueError("daily_limit must be a positive integer or null.")
+
+    scheduler = config.get("scheduler", {})
+    if not isinstance(scheduler, dict):
+        raise ValueError("scheduler must be an object.")
+    if not isinstance(scheduler.get("enabled", True), bool):
+        raise ValueError("scheduler.enabled must be a boolean.")
+    scheduler_path = scheduler.get("state_path", "data/mina_scheduler.sqlite3")
+    if not isinstance(scheduler_path, str) or not scheduler_path.strip():
+        raise ValueError("scheduler.state_path must be a non-empty local path.")
 
     peek_chance = config.get("emoji_peek", {}).get("chance", 0.2)
     if not isinstance(peek_chance, (int, float)) or not 0 <= peek_chance <= 1:

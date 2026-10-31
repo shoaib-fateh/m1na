@@ -7,8 +7,10 @@ from mina.config import PROJECT_ROOT, load_config
 
 def test_loads_default_project_configuration():
     config = load_config()
-    assert config["profile"] == "development"
-    assert config["profiles"]["development"]["daily_limit"] is None
+    assert config["profile"] == "normal"
+    assert config["profiles"]["normal"]["daily_limit"] == 8
+    assert config["scheduler"]["enabled"]
+    assert config["scheduler"]["state_path"] == "data/mina_scheduler.sqlite3"
     assert config["popup"]["animation"]["peek_duration_ms"] == 8_000
     assert config["chat"]["memory_messages"] == 10
     assert config["application_awareness"]["max_applications"] == 5
@@ -33,6 +35,25 @@ def test_time_behavior_can_be_omitted_from_older_config(tmp_path):
     path.write_text(json.dumps(config), encoding="utf-8")
 
     assert load_config(path)["profile"] == config["profile"]
+
+
+@pytest.mark.parametrize(
+    ("key", "value", "message"),
+    [
+        ("enabled", "yes", "scheduler.enabled"),
+        ("state_path", "", "scheduler.state_path"),
+    ],
+)
+def test_rejects_invalid_scheduler_settings(tmp_path, key, value, message):
+    from mina.config import DEFAULT_CONFIG_PATH
+
+    config = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+    config["scheduler"][key] = value
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        load_config(path)
 
 
 @pytest.mark.parametrize(
