@@ -127,6 +127,10 @@ class MinaWindows:
     def popup_active(self) -> bool:
         return self._popup is not None
 
+    @property
+    def text_renderer(self) -> PixelTextRenderer:
+        return self._text_renderer
+
     def _create_pixel_text(
         self,
         canvas: tk.Canvas,
