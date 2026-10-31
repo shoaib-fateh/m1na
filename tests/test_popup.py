@@ -60,6 +60,86 @@ def test_minimize_slides_popup_away_without_exiting_companion():
     assert calls == [(120, 500, 1042, 200, "out")]
 
 
+def test_dialogue_can_be_dragged_from_title_area_and_remembers_position():
+    class Popup:
+        def __init__(self):
+            self.geometry_value = None
+
+        def winfo_x(self):
+            return 100
+
+        def winfo_y(self):
+            return 200
+
+        def winfo_width(self):
+            return 420
+
+        def winfo_height(self):
+            return 142
+
+        def geometry(self, value):
+            self.geometry_value = value
+
+    window = object.__new__(MinaWindows)
+    window._popup = Popup()
+    window._popup_kind = "dialogue"
+    window._popup_drag_offset = None
+    window._popup_drag_right = 240
+    window._dialogue_position = None
+    window._get_work_area = lambda: (0, 0, 1920, 1080)
+
+    assert window._start_popup_drag(
+        type("Event", (), {"x": 20, "y": 15, "x_root": 120, "y_root": 215})()
+    ) == "break"
+    window._drag_popup(
+        type("Event", (), {"x_root": 320, "y_root": 415})()
+    )
+
+    assert window._popup.geometry_value == "+300+400"
+    assert window._dialogue_position == (300, 400)
+    window._end_popup_drag(None)
+    assert window._popup_drag_offset is None
+
+
+def test_dialogue_drag_ignores_buttons_and_clamps_to_desktop(monkeypatch):
+    import ctypes
+    from types import SimpleNamespace
+
+    metrics = {76: 0, 77: 0, 78: 1920, 79: 1080}
+    monkeypatch.setattr(
+        ctypes,
+        "windll",
+        SimpleNamespace(
+            user32=SimpleNamespace(GetSystemMetrics=lambda index: metrics[index])
+        ),
+        raising=False,
+    )
+    window = object.__new__(MinaWindows)
+    window._popup = type(
+        "Popup",
+        (),
+        {
+            "winfo_x": lambda _self: 100,
+            "winfo_y": lambda _self: 200,
+            "winfo_width": lambda _self: 420,
+            "winfo_height": lambda _self: 142,
+            "geometry": lambda _self, value: setattr(_self, "geometry_value", value),
+        },
+    )()
+    window._popup_kind = "dialogue"
+    window._popup_drag_offset = None
+    window._popup_drag_right = 240
+    window._dialogue_position = None
+    event = type("Event", (), {"x": 250, "y": 15, "x_root": 350, "y_root": 215})()
+
+    assert window._start_popup_drag(event) is None
+    window._popup_drag_offset = (10, 10)
+    window._drag_popup(type("Event", (), {"x_root": 5000, "y_root": 5000})())
+
+    assert window._popup.geometry_value == "+1500+938"
+    assert window._dialogue_position == (1500, 938)
+
+
 def test_emoji_peek_draws_only_the_gif_without_dialogue_decoration():
     class Frame:
         def width(self):

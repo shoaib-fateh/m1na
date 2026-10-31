@@ -57,6 +57,9 @@ class MinaWindows:
         self._dismiss_timer_started_at: float | None = None
         self._dismiss_callback: Callable[[], None] | None = None
         self._popup_hovered = False
+        self._popup_drag_offset: tuple[int, int] | None = None
+        self._popup_drag_right = 0
+        self._dialogue_position: tuple[int, int] | None = None
         self._sound_playing = False
         self._sound_mode: str | None = None
         self._sound_player = SoundPlayer()
@@ -588,6 +591,7 @@ class MinaWindows:
         self._popup_kind = "peek" if peek else "dialogue"
         self._current_mood = mood
         self._popup_hovered = False
+        self._popup_drag_offset = None
         self._popup_static_photos.clear()
         self._message = message
         self._typed = 0
@@ -632,6 +636,10 @@ class MinaWindows:
         self._canvas.bind("<Enter>", self._on_popup_enter)
         self._canvas.bind("<Leave>", self._on_popup_leave)
         self._canvas.bind("<Motion>", self._on_popup_motion)
+        if not peek:
+            self._canvas.bind("<ButtonPress-1>", self._start_popup_drag)
+            self._canvas.bind("<B1-Motion>", self._drag_popup)
+            self._canvas.bind("<ButtonRelease-1>", self._end_popup_drag)
 
         work_left, work_top, work_right, work_bottom = self._get_work_area()
         if peek:
@@ -640,6 +648,10 @@ class MinaWindows:
         else:
             target_x = work_left + (work_right - work_left - width) // 2
             target_y = work_top + (work_bottom - work_top - height) // 2
+            if self._dialogue_position is not None:
+                target_x, target_y = self._clamp_dialogue_position(
+                    *self._dialogue_position, width, height
+                )
         start_y = work_bottom + 2
         popup.geometry(f"{width}x{height}+{target_x}+{start_y}")
 
@@ -779,6 +791,7 @@ class MinaWindows:
             self.on_open_chat,
             photo_store=self._popup_static_photos,
         )
+        self._popup_drag_right = mute_center_x - 70 - 29
         hover_button, hover_label, _ = self._pixel_button(
             canvas,
             37,
@@ -809,6 +822,57 @@ class MinaWindows:
         state = "normal" if visible else "hidden"
         for item in self._hover_chat_items:
             self._canvas.itemconfigure(item, state=state)
+
+    def _start_popup_drag(self, event: tk.Event) -> str | None:
+        popup = self._popup
+        if (
+            popup is None
+            or self._popup_kind != "dialogue"
+            or not 6 <= event.y <= 25
+            or not 6 <= event.x <= self._popup_drag_right
+        ):
+            return None
+        self._popup_drag_offset = (
+            event.x_root - popup.winfo_x(),
+            event.y_root - popup.winfo_y(),
+        )
+        return "break"
+
+    def _drag_popup(self, event: tk.Event) -> None:
+        popup = self._popup
+        if popup is None or self._popup_drag_offset is None:
+            return
+        offset_x, offset_y = self._popup_drag_offset
+        width = popup.winfo_width()
+        height = popup.winfo_height()
+        x, y = self._clamp_dialogue_position(
+            event.x_root - offset_x, event.y_root - offset_y, width, height
+        )
+        self._dialogue_position = (x, y)
+        popup.geometry(f"+{x}+{y}")
+
+    def _end_popup_drag(self, _event: tk.Event) -> None:
+        self._popup_drag_offset = None
+
+    def _clamp_dialogue_position(
+        self, x: int, y: int, width: int, height: int
+    ) -> tuple[int, int]:
+        try:
+            import ctypes
+
+            user32 = ctypes.windll.user32
+            left = user32.GetSystemMetrics(76)
+            top = user32.GetSystemMetrics(77)
+            right = left + user32.GetSystemMetrics(78)
+            bottom = top + user32.GetSystemMetrics(79)
+            if right <= left or bottom <= top:
+                raise OSError("Windows returned an invalid virtual screen size.")
+        except (AttributeError, OSError):
+            left, top, right, bottom = self._get_work_area()
+        return (
+            max(left, min(x, right - width)),
+            max(top, min(y, bottom - height)),
+        )
 
     def _type_next(self) -> None:
         if self._canvas is None or self._popup is None:
@@ -1012,6 +1076,7 @@ class MinaWindows:
                 self.on_popup_dismissed()
         self._popup = None
         self._canvas = None
+        self._popup_drag_offset = None
         self._hover_chat_items = None
         self._chat_input_frame = None
         self._chat_entry_slot = None
