@@ -1,6 +1,6 @@
 # Mina
 
-Mina is a tiny, silly Windows desktop creature. She occasionally displays a short absurd thought or peeks from a screen corner as an animated pixel emoji. She uses a local Qwen model only; she does not record keyboard input or use cloud services.
+Mina is a tiny, silly Windows desktop creature. She occasionally displays a short absurd thought near the center of the screen or peeks from a screen corner as an animated pixel emoji. She can also chat using the local Qwen model. She does not record keyboard input or use cloud services.
 
 ## Requirements
 
@@ -22,7 +22,7 @@ python -m pip install -r requirements.txt
 python mina.py
 ```
 
-If a compatible CPU build of PyTorch is already installed, skip the first `pip install` command. After dependencies are installed, Mina immediately loads the configured local model on CPU in a background thread. The small top-right panel remains responsive while loading; errors appear in its status text.
+If a compatible CPU build of PyTorch is already installed, skip the first `pip install` command. After dependencies are installed, Mina immediately loads the configured local model on CPU in a background thread. Tkinter remains responsive while it loads and generates; errors appear in the status text.
 
 ## Configuration
 
@@ -33,18 +33,29 @@ Edit `config.json`:
 - `profiles.development`: random 20–60 second intervals and 10–30 second cooldowns after each popup disappears, no daily cap.
 - `profiles.normal`: random 30–60 minute intervals and 30–45 minute cooldowns after each popup disappears, capped at 8/day.
 - `activity.active_within_seconds`: recent-input window. Mina checks only Windows' last-input timestamp and never reads or stores keys or typed text.
-- `emoji_peek.chance`: chance to show an emoji-only peek instead of generating dialogue. A peek lasts 60 seconds and consumes the same interruption/cooldown slot, but uses no model generation or typing sound.
-- `sound.typing_wav`: WAV played in a loop only while Mina types; set to `null` to disable sound. The included retro key-clack clip is attenuated by 6 dB for a gentler peak volume.
-- `ui.font_path` and `ui.persian_fallback`: Mojangles and Persian-capable fallback font paths/family. The persistent companion panel stays hidden; only Mina's dialogue and emoji popups appear. Model and runtime errors are reported in the hidden status area.
+- `application_awareness.enabled`: enable or disable lightweight local detection of up to five visible applications. Detection uses foreground/z-order windows and executable names only; it does not read window titles or contents, take screenshots, or inspect input.
+- `application_awareness.max_applications`: maximum number of visible applications to consider (1–5).
+- `gaming_mode.enabled`: automatically pause Mina when the foreground window fills its monitor. Windows does not expose a universal game-identification signal, so Mina uses a lightweight fullscreen-foreground heuristic; known non-game apps can be added to `gaming_mode.excluded_processes`. Detection uses only window bounds and the executable name. No screenshots or game contents are inspected. While active, scheduled thoughts and peeks are discarded, popups and sounds stop, and the scheduler resumes with a fresh interval after fullscreen focus ends.
+- `gaming_mode.poll_interval_ms`: local fullscreen check interval.
+- `chat.memory_messages`: number of latest chat messages included in the next Qwen prompt (default 10). Older messages remain in the local dataset but are not added to active model context.
+- `dataset.path`: local SQLite dataset path. It records timestamps, message roles and text, message type, and detected application names. This archive is separate from active chat memory and is never sent outside the computer.
+- `emoji_peek.chance`: chance to show an emoji-only peek instead of generating dialogue. A peek lasts 8 seconds and consumes the same interruption/cooldown slot, but uses no model generation or typing sound. Hover over the emoji to reveal its Chat button.
+- `sound.dialogue_mode`: choose `animalese` (default), `typing` (keyboard sound as an alternative), or `silent`. Only the selected dialogue mode plays during Mina's text; Animalese disables the keyboard typing loop.
+- `sound.animalese`: independently enable the retro dialogue sound, configure its local WAV file, volume (0–100), and playback speed (0.25–4.0). By default Mina loops the supplied `assets/sounds/dialogue_blip.wav` at natural 1.0× speed while text is being revealed, then stops it as soon as the typewriter finishes.
+- `sound.typing`: configure the separate looping keyboard WAV alternative with its local `path`, `enabled`, and `volume` (0–100).
+- `sound.click`: optionally play a configured local WAV when sending a chat message; disabled by default and has its own volume.
+- `ui.font_path` and `ui.persian_fallback`: Mojangles and Persian-capable fallback font paths/family. Mina's Message/Chat buttons open a pixel-styled message input directly beneath the current popup. The input and Send button use readable Segoe UI while retaining Mina's colors and pixel-panel styling. The popup stays visible while you type; after sending, it disappears while Qwen responds, then Mina shows her reply in a new, pixel-art dialogue popup. Popup height grows to fit wrapped text, preventing long messages from overlapping the frame. Hover over the animated Mina GIF or an emoji-only peek to reveal a Chat shortcut. Manual chat pauses and cancels pending interruptions until the reply popup closes. Mina stays available from the system tray; choose “Chat with Mina” to start a conversation or “Exit Mina” to quit. Spontaneous thoughts use the pixel-art typewriter near screen center, separate from the corner-peek animation. Model and runtime errors are reported in Mina's status area.
 
-Mina's popup animation, typewriter speed, size, hold time, and mute-button header padding are configurable too; dialogue stays for 8 seconds after typing finishes by default. The auto-hide timer pauses while the pointer is over a message or emoji popup, then resumes with the remaining time when the pointer leaves. Its minimize control slides the dialogue away while leaving Mina running. Emoji-only peeks display only the animated GIF, with no title, frame, text, or controls. Emoji mappings live in `assets/emojis/moods.json`, and the ready-to-use transparent GIFs live in `assets/emojis/animations/`. Pillow loads each GIF's frames and frame durations directly; scaling uses nearest-neighbor resampling to preserve sharp pixels. No PNG emoji assets are used. Text is rasterized directly at pixel size with Mojangles; unsupported punctuation uses the configured system fallback. Add GIF animations by updating the mood mapping, not application code.
+Mina's popup animation, typewriter speed, size, hold time, and mute-button header padding are configurable too; dialogue stays for 8 seconds after typing finishes by default. The auto-hide timer pauses while the pointer is over a message or emoji popup, then resumes with the remaining time when the pointer leaves. Its minimize control slides the dialogue away while leaving Mina running. Emoji-only peeks show just the animated GIF until you hover it to reveal the Chat button. Emoji mappings live in `assets/emojis/moods.json`, and the ready-to-use transparent GIFs live in `assets/emojis/animations/`. Pillow loads each GIF's frames and frame durations directly; scaling uses nearest-neighbor resampling to preserve sharp pixels. No PNG emoji assets are used. Text is rasterized directly at pixel size with Mojangles; unsupported punctuation uses the configured system fallback. Add GIF animations by updating the mood mapping, not application code.
 
 The supplied emoji pack is CC0 1.0. Mojangles is provided for local personal use alongside its readme and license; its license is non-commercial and does not permit redistribution.
 
 ## Notes
 
 - Mina is designed to run on Windows. Activity detection uses `GetLastInputInfo` through `ctypes`.
+- `pystray` provides Mina's persistent Windows notification-area icon and manual chat/exit menu.
 - Model loading and generation use worker threads; Tkinter animations use scheduled callbacks.
+- Sound playback is asynchronous. Sound volume and playback speed are prepared locally from uncompressed PCM WAV data in the background; adjusted temporary files are removed when Mina exits. At most one sound mode is active at a time.
 - If an emoji sheet or configured sound file is unavailable, Mina displays an explicit status error.
 - The included typing effect is derived from the user-provided retro-terminal key-clacks WAV. The full clip is looped while text is being revealed and stops when typing completes or the popup is dismissed.
 - To exit Mina, use the `X` control on her companion panel. The dialogue's underscore control minimizes only that message.

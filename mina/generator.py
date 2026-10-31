@@ -5,11 +5,14 @@ from pathlib import Path
 
 
 PERSONALITY = (
-    "You are Mina, a tiny silly creature that lives on the user's desktop. "
-    "You are playful, spontaneous, oddly specific, and sometimes delightfully nonsensical. "
-    "You are not an assistant: never give productivity advice, offer help, ask what the user needs, "
-    "or explain your reasoning. Say one brief funny or absurd thought, usually one sentence and "
-    "never more than two. Avoid greetings and repeated catchphrases."
+    "You are Mina, a tiny silly creature who lives on the user's desktop. "
+    "You are playful, warm, casually curious, oddly specific, and sometimes delightfully "
+    "nonsensical. Talk like a familiar little companion, not a generic assistant. "
+    "When the user speaks to you, respond directly to what they said in a natural, concise "
+    "way; you may react, joke, or ask a small follow-up question. Do not offer productivity "
+    "advice, volunteer to perform tasks, use customer-service language, or explain your "
+    "reasoning. For spontaneous thoughts, say one brief absurd observation, usually one "
+    "sentence. Avoid repeated catchphrases."
 )
 
 
@@ -50,17 +53,63 @@ class LocalQwen:
         self._tokenizer = tokenizer
         self._model = model
 
-    def generate(self) -> str:
+    def generate(self, active_applications: list[str] | None = None) -> str:
         if not self.loaded:
             raise RuntimeError("The local Mina model has not finished loading.")
 
+        applications = active_applications or []
+        context = (
+            "The user may be using one of these applications: "
+            + ", ".join(applications)
+            + ". Occasionally make a brief, playful observation about this context if it "
+            "fits naturally; do not mention it every time."
+            if applications
+            else "No application context is available."
+        )
+        return self._generate(
+            [
+                {"role": "system", "content": PERSONALITY},
+                {
+                    "role": "user",
+                    "content": f"{context}\nSay one new short spontaneous thought.",
+                },
+            ],
+            max_characters=220,
+        )
+
+    def generate_chat(
+        self,
+        messages: list[dict[str, str]],
+        active_applications: list[str] | None = None,
+    ) -> str:
+        if not self.loaded:
+            raise RuntimeError("The local Mina model has not finished loading.")
+        if not messages or messages[-1].get("role") != "user":
+            raise ValueError("Chat history must end with the user's latest message.")
+        if any(message.get("role") not in {"user", "assistant"} for message in messages):
+            raise ValueError("Chat history contains an unsupported role.")
+
+        system_prompt = PERSONALITY
+        if active_applications:
+            system_prompt += (
+                " Visible application names for optional conversational context: "
+                + ", ".join(active_applications)
+                + ". Mention one only if it is naturally relevant."
+            )
+        chat_messages = [{"role": "system", "content": system_prompt}]
+        chat_messages.extend(
+            {
+                "role": "assistant" if message["role"] == "assistant" else "user",
+                "content": message["text"],
+            }
+            for message in messages
+        )
+        return self._generate(chat_messages, max_characters=400)
+
+    def _generate(self, messages: list[dict[str, str]], max_characters: int) -> str:
         import torch
 
         with self._lock, torch.inference_mode():
-            messages = [
-                {"role": "system", "content": PERSONALITY},
-                {"role": "user", "content": "Say one new short absurd thought."},
-            ]
             tokenizer = self._tokenizer
             model = self._model
             if tokenizer is None or model is None:
@@ -72,7 +121,12 @@ class LocalQwen:
                 )
                 inputs = tokenizer(prompt, return_tensors="pt")
             else:
-                prompt = f"System: {PERSONALITY}\nUser: What is on your mind right now? \nMina:"
+                prompt = "\n".join(
+                    f"{'Mina' if message['role'] == 'assistant' else message['role'].title()}: "
+                    f"{message['content']}"
+                    for message in messages
+                )
+                prompt += "\nMina:"
                 inputs = tokenizer(prompt, return_tensors="pt")
 
             outputs = model.generate(
@@ -86,7 +140,7 @@ class LocalQwen:
             )
             generated = outputs[0, inputs["input_ids"].shape[1] :]
             text = tokenizer.decode(generated, skip_special_tokens=True)
-        return clean_message(text)
+        return clean_message(text, max_characters=max_characters)
 
 
 def clean_message(text: str, max_characters: int = 220) -> str:

@@ -98,3 +98,23 @@ def test_daily_limit_resets_on_local_date_change():
     current_day[0] += timedelta(days=1)
     clock.now = 20
     assert scheduler.poll()
+
+
+def test_cancel_interruption_releases_slot_without_counting_a_missed_message():
+    clock = Clock()
+    scheduler, fired = make_scheduler(clock, lambda _limit: True, limit=1)
+    clock.now = 10
+    assert scheduler.poll()
+    assert scheduler.daily_count == 1
+
+    scheduler.cancel_interruption()
+    scheduler.stop()
+    scheduler.start()
+
+    assert scheduler.daily_count == 0
+    assert not scheduler._interruption_active
+    clock.now = 19
+    assert not scheduler.poll()
+    clock.now = 20
+    assert scheduler.poll()
+    assert fired == [10, 20]

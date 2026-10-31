@@ -53,6 +53,14 @@ class InterruptionScheduler:
     def stop(self) -> None:
         self.enabled = False
 
+    def cancel_interruption(self) -> None:
+        if not self._interruption_active:
+            return
+        self._reset_daily_count_if_needed()
+        self._interruption_active = False
+        self._daily_count = max(0, self._daily_count - 1)
+        self.cooldown_until = 0.0
+
     def poll(self) -> bool:
         if not self.enabled:
             return False

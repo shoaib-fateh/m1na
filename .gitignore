@@ -28,3 +28,6 @@ Desktop.ini
 
 # Local logs
 *.log
+
+# Mina's private local message archive
+/data/

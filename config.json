@@ -9,6 +9,33 @@
     "active_within_seconds": 300,
     "poll_interval_ms": 1000
   },
+  "application_awareness": {
+    "enabled": true,
+    "max_applications": 5
+  },
+  "gaming_mode": {
+    "enabled": true,
+    "poll_interval_ms": 1000,
+    "excluded_processes": [
+      "Code",
+      "chrome",
+      "firefox",
+      "msedge",
+      "explorer",
+      "Photoshop",
+      "Premiere",
+      "KMPlayer",
+      "vlc",
+      "mpv",
+      "PowerPoint"
+    ]
+  },
+  "chat": {
+    "memory_messages": 10
+  },
+  "dataset": {
+    "path": "data/mina.sqlite3"
+  },
   "profiles": {
     "development": {
       "interval_seconds": [20, 60],
@@ -52,15 +79,32 @@
   "popup": {
     "size": [420, 142],
     "message_font_size": 16,
-    "typewriter_ms": 35,
+    "typewriter_ms": 45,
     "hold_ms": 8000,
     "mute_header_right_padding": 16,
     "animation": {
       "slide_ms": 200,
-      "peek_duration_ms": 60000
+      "peek_duration_ms": 8000
     }
   },
   "sound": {
-    "typing_wav": "assets/sounds/typing.wav"
+    "dialogue_mode": "animalese",
+    "animalese": {
+      "enabled": true,
+      "files": ["assets/sounds/dialogue_blip.wav"],
+      "volume": 55,
+      "playback_speed": 1.0,
+      "character_interval_ms": 70
+    },
+    "typing": {
+      "enabled": true,
+      "path": "assets/sounds/typing.wav",
+      "volume": 35
+    },
+    "click": {
+      "enabled": false,
+      "path": null,
+      "volume": 40
+    }
   }
 }
