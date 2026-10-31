@@ -65,7 +65,6 @@ class MinaWindows:
             [self._resolve_sound_path(path) for path in animalese_files],
             random.Random(),
         ) if animalese_files else None
-        self._dialogue_sound_started = False
         self._reported_sound_errors: set[str] = set()
         self._gaming_mode = False
         self._status_clear_job: str | None = None
@@ -553,12 +552,12 @@ class MinaWindows:
                 speed = float(settings.get("playback_speed", 2.5))
                 for path in settings.get("files", []):
                     try:
-                        self._sound_player.prepare(
+                        self._sound_player.prepare_blip(
                             self._resolve_sound_path(path),
                             int(settings.get("volume", 100)),
                             speed,
                         )
-                    except (OSError, ValueError) as error:
+                    except (OSError, RuntimeError, ValueError) as error:
                         self._reported_sound_errors.add(
                             str(self._resolve_sound_path(path))
                         )
@@ -591,7 +590,6 @@ class MinaWindows:
         self._popup_hovered = False
         self._popup_static_photos.clear()
         self._message = message
-        self._dialogue_sound_started = False
         self._typed = 0
         self._frame_index = 0
         try:
@@ -828,7 +826,7 @@ class MinaWindows:
             delay = self._dialogue_character_delay()
             self._type_job = self.root.after(max(1, delay), self._type_next)
         else:
-            if self._sound_mode in {"typing", "animalese"}:
+            if self._sound_mode == "typing":
                 self._stop_sound()
             hold = int(self.config["popup"].get("hold_ms", 3000))
             self._start_dismiss_timer(hold, self._dismiss_dialogue)
@@ -1055,7 +1053,10 @@ class MinaWindows:
         if error_key in self._reported_sound_errors:
             return
         try:
-            self._sound_player.play(mode, path, volume, loop, speed)
+            if mode == "animalese":
+                self._sound_player.play_blip(mode, path, volume, speed)
+            else:
+                self._sound_player.play(mode, path, volume, loop, speed)
             self._sound_playing = True
             self._sound_mode = mode
         except (OSError, RuntimeError, ValueError) as error:
@@ -1110,14 +1111,10 @@ class MinaWindows:
         settings = self.config.get("sound", {}).get("animalese", {})
         if not settings.get("enabled", True) or self._animalese_blips is None:
             return
-        if self._dialogue_sound_started:
-            return
-        self._dialogue_sound_started = True
         self._play_sound(
             str(self._animalese_blips.next_path()),
             mode="animalese",
             volume=int(settings.get("volume", 100)),
-            loop=True,
             speed=float(settings.get("playback_speed", 2.5)),
         )
 

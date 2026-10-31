@@ -17,10 +17,17 @@ def test_loads_default_project_configuration():
     assert config["sound"]["typing"]["enabled"]
     assert config["sound"]["dialogue_mode"] == "animalese"
     assert config["sound"]["animalese"]["files"] == [
-        "assets/sounds/dialogue_blip.wav"
+        "assets/sounds/blips/blip_1_root.wav",
+        "assets/sounds/blips/blip_2_second.wav",
+        "assets/sounds/blips/blip_3_third.wav",
+        "assets/sounds/blips/blip_4_fifth.wav",
+        "assets/sounds/blips/blip_5_sixth.wav",
     ]
-    assert (PROJECT_ROOT / config["sound"]["animalese"]["files"][0]).is_file()
-    assert config["sound"]["animalese"]["playback_speed"] == 1.0
+    assert all(
+        (PROJECT_ROOT / path).is_file()
+        for path in config["sound"]["animalese"]["files"]
+    )
+    assert config["sound"]["animalese"]["playback_speed"] == 2.1
     assert config["gaming_mode"]["enabled"]
     assert config["time_behavior"]["enabled"]
     assert config["time_behavior"]["poll_interval_ms"] == 30_000

@@ -169,9 +169,15 @@
     "dialogue_mode": "animalese",
     "animalese": {
       "enabled": true,
-      "files": ["assets/sounds/dialogue_blip.wav"],
+      "files": [
+        "assets/sounds/blips/blip_1_root.wav",
+        "assets/sounds/blips/blip_2_second.wav",
+        "assets/sounds/blips/blip_3_third.wav",
+        "assets/sounds/blips/blip_4_fifth.wav",
+        "assets/sounds/blips/blip_5_sixth.wav"
+      ],
       "volume": 55,
-      "playback_speed": 1.0,
+      "playback_speed": 2.1,
       "character_interval_ms": 70
     },
     "typing": {

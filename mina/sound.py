@@ -37,6 +37,9 @@ class SoundPlayer:
         self.active_mode: str | None = None
         self._temporary_directory: tempfile.TemporaryDirectory[str] | None = None
         self._scaled_paths: dict[tuple[Path, int, int, int, int], Path] = {}
+        self._pygame_module = None
+        self._pygame_channel = None
+        self._pygame_sounds: dict[Path, object] = {}
 
     def prepare(self, path: str | Path, volume: int, speed: float = 1.0) -> int:
         if not isinstance(volume, int) or isinstance(volume, bool) or not 0 <= volume <= 100:
@@ -88,20 +91,95 @@ class SoundPlayer:
         winsound.PlaySound(str(playback_path), flags)
         self.active_mode = mode
 
+    def prepare_blip(self, path: str | Path, volume: int, speed: float = 1.0) -> int:
+        duration_ms = self.prepare(path, volume, speed)
+        if volume:
+            self._get_blip_sound(path, volume, speed)
+        return duration_ms
+
+    def play_blip(
+        self, mode: str, path: str | Path, volume: int, speed: float = 1.0
+    ) -> None:
+        if mode != "animalese":
+            raise ValueError(f"Unsupported blip sound mode: {mode!r}")
+        if not isinstance(volume, int) or isinstance(volume, bool) or not 0 <= volume <= 100:
+            raise ValueError("Sound volume must be an integer from 0 to 100.")
+        _validate_speed(speed)
+        source = Path(path).resolve()
+        if not source.is_file():
+            raise FileNotFoundError(f"Sound file not found: {source}")
+
+        self.stop()
+        if volume == 0:
+            return
+        pygame, sound = self._get_blip_sound(source, volume, speed)
+        try:
+            channel = pygame.mixer.Channel(0)
+            channel.play(sound)
+        except pygame.error as error:
+            raise RuntimeError(f"Could not play Animalese blip: {error}") from error
+        self._pygame_channel = channel
+        self.active_mode = mode
+
     def stop(self) -> None:
         if self.active_mode is None:
             return
-        import winsound
+        if self.active_mode == "animalese":
+            if self._pygame_channel is not None:
+                try:
+                    self._pygame_channel.stop()
+                except self._pygame_module.error as error:
+                    raise RuntimeError(f"Could not stop Animalese blip: {error}") from error
+        else:
+            import winsound
 
-        winsound.PlaySound(None, 0)
+            winsound.PlaySound(None, 0)
         self.active_mode = None
 
     def close(self) -> None:
         self.stop()
         self._scaled_paths.clear()
+        self._pygame_sounds.clear()
+        if self._pygame_module is not None:
+            self._pygame_module.mixer.quit()
+            self._pygame_module = None
+            self._pygame_channel = None
         if self._temporary_directory is not None:
             self._temporary_directory.cleanup()
             self._temporary_directory = None
+
+    def _get_blip_sound(self, path: str | Path, volume: int, speed: float):
+        source = Path(path).resolve()
+        pygame = self._get_pygame()
+        playback_path = (
+            source
+            if volume == 100 and speed == 1
+            else self._scaled_path(source, volume, speed)
+        )
+        sound = self._pygame_sounds.get(playback_path)
+        if sound is None:
+            try:
+                sound = pygame.mixer.Sound(str(playback_path))
+            except pygame.error as error:
+                raise RuntimeError(f"Could not load Animalese blip: {error}") from error
+            self._pygame_sounds[playback_path] = sound
+        return pygame, sound
+
+    def _get_pygame(self):
+        if self._pygame_module is not None:
+            return self._pygame_module
+        try:
+            import pygame
+        except ImportError as error:
+            raise RuntimeError("pygame is required for Animalese dialogue sounds.") from error
+        try:
+            if pygame.mixer.get_init() is None:
+                pygame.mixer.pre_init(44100, -16, 2, 256)
+                pygame.mixer.init()
+        except pygame.error as error:
+            raise RuntimeError(f"Could not initialize Animalese audio: {error}") from error
+        self._pygame_module = pygame
+        return pygame
 
     def _scaled_path(self, source: Path, volume: int, speed: float = 1.0) -> Path:
         stat = source.stat()

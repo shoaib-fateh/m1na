@@ -138,7 +138,6 @@ def test_animalese_does_not_play_for_whitespace_or_punctuation():
     window._gaming_mode = False
     window._sound_mode = "typing"
     window._popup_kind = ""
-    window._dialogue_sound_started = False
     window.config = {
         "sound": {
             "dialogue_mode": "animalese",
@@ -157,47 +156,41 @@ def test_animalese_does_not_play_for_whitespace_or_punctuation():
     window._play_dialogue_character(" ")
     window._play_dialogue_character("!")
     assert calls == []
-
     window._play_dialogue_character("M")
     window._play_dialogue_character("i")
-    assert len(calls) == 1
-    assert calls[0][1] == {
-        "mode": "animalese",
-        "volume": 55,
-        "loop": True,
-        "speed": 2.5,
-    }
+    assert len(calls) == 2
+    assert calls[0][0][0] != calls[1][0][0]
+    assert calls[0][1] == {"mode": "animalese", "volume": 55, "speed": 2.5}
 
 
-def test_configured_dialogue_audio_uses_one_sample_per_dialogue():
+def test_configured_dialogue_audio_plays_one_blip_per_character():
     window = object.__new__(MinaWindows)
     window._gaming_mode = False
-    window._dialogue_sound_started = False
     window.config = {
         "sound": {
             "dialogue_mode": "animalese",
             "animalese": {
                 "enabled": True,
-                "files": ["dialogue.wav"],
+                "files": ["dialogue_1.wav", "dialogue_2.wav"],
                 "volume": 55,
                 "playback_speed": 1.0,
             },
         }
     }
-    window._animalese_blips = AnimaleseBlips(["dialogue.wav"])
+    window._animalese_blips = AnimaleseBlips(["dialogue_1.wav", "dialogue_2.wav"])
     calls = []
     window._play_sound = lambda *args, **kwargs: calls.append((args, kwargs))
 
     window._play_dialogue_character("H")
     window._play_dialogue_character("i")
 
-    assert len(calls) == 1
-    assert calls[0][0][0] == "dialogue.wav"
-    assert calls[0][1]["speed"] == 1.0
-    assert calls[0][1]["loop"]
+    assert len(calls) == 2
+    assert calls[0][0][0] != calls[1][0][0]
+    assert all(call[1]["speed"] == 1.0 for call in calls)
+    assert all(call[1].get("loop", False) is False for call in calls)
 
 
-def test_dialogue_audio_stops_when_typewriter_finishes():
+def test_final_animalese_blip_is_not_cut_off_when_typewriter_finishes():
     window = object.__new__(MinaWindows)
     window._canvas = type("Canvas", (), {"itemconfigure": lambda *_args, **_kwargs: None})()
     window._popup = object()
@@ -217,7 +210,70 @@ def test_dialogue_audio_stops_when_typewriter_finishes():
 
     window._type_next()
 
-    assert calls == ["stop"]
+    assert calls == []
+
+
+def test_animalese_blips_use_cached_low_latency_mixer_samples(monkeypatch, tmp_path):
+    class FakeChannel:
+        def __init__(self):
+            self.played = []
+            self.stop_count = 0
+
+        def play(self, sound):
+            self.played.append(sound)
+
+        def stop(self):
+            self.stop_count += 1
+
+    class FakeMixer:
+        def __init__(self):
+            self.channel = FakeChannel()
+            self.sound_paths = []
+            self.initialized = False
+            self.pre_init_args = None
+            self.quit_called = False
+
+        def get_init(self):
+            return (44100, -16, 2) if self.initialized else None
+
+        def pre_init(self, *args):
+            self.pre_init_args = args
+
+        def init(self):
+            self.initialized = True
+
+        def Sound(self, path):
+            self.sound_paths.append(path)
+            return path
+
+        def Channel(self, index):
+            assert index == 0
+            return self.channel
+
+        def quit(self):
+            self.quit_called = True
+
+    mixer = FakeMixer()
+    fake_pygame = SimpleNamespace(error=RuntimeError, mixer=mixer)
+    monkeypatch.setitem(sys.modules, "pygame", fake_pygame)
+    source = tmp_path / "blip.wav"
+    with wave.open(str(source), "wb") as audio:
+        audio.setnchannels(1)
+        audio.setsampwidth(2)
+        audio.setframerate(8000)
+        audio.writeframes((1000).to_bytes(2, "little", signed=True))
+
+    player = SoundPlayer()
+    player.play_blip("animalese", source, 100, speed=2.0)
+    player.play_blip("animalese", source, 100, speed=2.0)
+
+    assert mixer.pre_init_args == (44100, -16, 2, 256)
+    assert len(mixer.sound_paths) == 1
+    assert len(mixer.channel.played) == 2
+    assert mixer.channel.stop_count == 1
+    assert player.active_mode == "animalese"
+    player.close()
+    assert mixer.quit_called
 
 
 def test_animalese_blips_never_repeat_consecutively():
